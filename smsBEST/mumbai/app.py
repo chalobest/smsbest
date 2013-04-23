@@ -87,7 +87,7 @@ def shorten_the_route_codes(inputstr):
    if inputstr.find('Ltd') is not None:
       inputstr = inputstr.replace('Ltd','L')
    if inputstr.find('Exp') is not None:
-      outputstr = inputstr.replace('Exp','E')
+      outputstr = inputstr.replace('Exp','X')
 
       return outputstr
 
