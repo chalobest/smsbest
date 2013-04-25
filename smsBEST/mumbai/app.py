@@ -11,6 +11,7 @@ try:
 except ImportError:
    import simplejson as json
 import ast
+import pdb
 
 
 MAX_MSG_LEN = 160
@@ -76,6 +77,27 @@ def get_stops_for_string(s):
             'stops': same_stops
         }
 
+def shorten_the_route_codes(inputstr):
+   
+   '''
+   Shorten Ltd,Exp etc
+
+   '''
+   inputstr = inputstr.replace(' ','')
+   if inputstr.find('Ltd') is not None:
+      inputstr = inputstr.replace('Ltd','L')
+   if inputstr.find('Exp') is not None:
+      outputstr = inputstr.replace('Exp','X')
+
+      return outputstr
+
+
+
+
+
+
+
+
 class App(AppBase):
     def handle(self, msg):
         if DIGIT.search(msg.text):
@@ -103,7 +125,7 @@ class App(AppBase):
                     #       tt=ast.literal_eval(json.dumps(item[0]))
                     #except ValueError:
                     #       tt=ast.literal_eval(json.dumps(item[0]))
-                for key, value in item[0].items():
+                 for key, value in item[0].items():
                     if key == "route_type_aliases":
                         if len(value.strip())==0 and len(pattern.strip())==0:
                             detail.append(str(item[0].get("display_name")))
@@ -147,12 +169,18 @@ class App(AppBase):
                 headway = "Freq: " + str(detail[5]) + " mins"
             else:
                 headway = "No bus now."
-            if str(detail[0]).find('Ltd') is not None:
-               str1 = str(detail[0])
-               str2 = str1.replace(' ','')
-               str3 = str2.replace('Ltd','L')
+            
+            # stops_str1 = shorten_Ltd_to_L(str(detail[0]))
+            # stops_str2 = shorten_Exp_to_E(str(stops_str1))
+            # if str(detail[0]).find('Ltd') is not None:
+            #    str1 = str(detail[0])
+            #    str2 = str1.replace(' ','')
+            #    str3 = str2.replace('Ltd','L')
+            str1 = shorten_the_route_codes(str(detail[0]))
 
-            response = "%s: %s (%s) to %s (%s). %s. %s %s" % (str3, str(detail[1]), str(detail[2]), str(detail[3]), str(detail[4]),str(headway), str(url), str(distance))
+
+
+            response = "%s: %s (%s) to %s (%s). %s. %s %s" % (str1, str(detail[1]), str(detail[2]), str(detail[3]), str(detail[4]),str(headway), str(url), str(distance))
 
         elif msg.text.find(" to ") != -1:
 
@@ -180,6 +208,7 @@ class App(AppBase):
                 msg.respond("Sorry, no direct buses found between %s and %s" % (from_matches['name'], to_matches['name'],))
                 return
             routesFound = ", ".join(intersection)
+            routesFound = shorten_the_route_codes(routesFound)
             response = "%s to %s: %s" % (from_matches['name'], to_matches['name'], routesFound,)
             if len(response) > MAX_MSG_LEN:
                 response = response[0:MAX_MSG_LEN]
@@ -204,11 +233,13 @@ class App(AppBase):
                 match = stop["display_name"] + ": " + stop["routes"]
                 if len(response) > len(STYLE["repeat"]): response += STYLE["repeat"]
                 response += match
+                response = shorten_the_route_codes(response)
                 if len(response) > MAX_MSG_LEN or stop['display_name'].lower() == msg.text.strip().lower(): break
             if len(response) > MAX_MSG_LEN:
                 response = response[:MAX_MSG_LEN-(len(STYLE["end"])+4)] + "..."
             response += STYLE["end"]
 
         msg.respond(response)
+
 
 
