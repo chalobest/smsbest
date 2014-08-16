@@ -186,7 +186,7 @@ class App(AppBase):
             if str(detail[5]).strip().isdigit():
                 headway = "Freq: " + str(detail[5]) + " mins"
             else:
-                headway = "Not running."
+                headway = "Not running"
             
             str1 = shorten_the_route_codes(str(detail[0]))
 
