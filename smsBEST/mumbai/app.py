@@ -52,14 +52,18 @@ def get_stops_for_string(s):
     stops = []
     s = s.strip()
 #    areas = ChaloBest.areas(q=s)
-    areas = [area for area in ChaloBest.areas(q=s) if area.lower().startswith(s)]
+    areas = [ area for area in ChaloBest.areas(q=s) if area.lower().startswith(s)]
+    # add area names from stops contained # should be done by .area() REST API but..
+    areanames = []
     if len(areas) > 0:
         for a in areas:
             area = ChaloBest.area[a]
+            areanames.append(area['area']['name'].title())
             for stop in area['stops']['features']:        
                 stops.append(stop)
+            
         return {
-            'name': ", ".join(areas),
+            'name': ", ".join(areanames),
             'stops': stops
         }
     else:
@@ -77,25 +81,34 @@ def get_stops_for_string(s):
             'stops': same_stops
         }
 
-def shorten_the_route_codes(inputstr):
-   
+def shorten_the_route_codes(inputstr):   
    '''
    Shorten Ltd,Exp etc
 
    '''
-   inputstr = inputstr.replace(' ','')
+   inputstr = inputstr.replace(' ','') #+ str(type(inputstr))
    if inputstr.find('Ltd') is not None:
       inputstr = inputstr.replace('Ltd','L')
    if inputstr.find('Exp') is not None:
-      outputstr = inputstr.replace('Exp','X')
-
-      return outputstr
-
-
-
-
+      inputstr = inputstr.replace('Exp','X')      
+   if inputstr.find('Ring') is not None:
+      inputstr = inputstr.replace('Ring','R')
+   if inputstr.find('Extra') is not None:
+      inputstr = inputstr.replace('Extra','XT')
 
 
+   #remove dups
+   routes = list(set(inputstr.split(',')))
+   
+   o1, o2 = [],[]    
+   for r in routes:
+      o1.append(r) if r[:1].isdigit() else o2.append(r)
+   o1sortedtup = sorted([(int(i.strip('LRASXT-')), i ) for i in o1 ]);   #sorts by number   
+   o1sorted = [ r[1] for r in o1sortedtup] 
+   o2sorted = sorted(o2); 
+   assorted = o1sorted + o2sorted
+   assorted = ",".join(assorted)
+   return assorted
 
 
 class App(AppBase):
@@ -165,19 +178,12 @@ class App(AppBase):
               #  return
             url = "http://chalobest.in" + str(detail[6])
             distance = str(detail[7])+" kms"
-            if str(detail[5]).strip() is not None:
+            if str(detail[5]).strip().isdigit():
                 headway = "Freq: " + str(detail[5]) + " mins"
             else:
-                headway = "No bus now."
+                headway = "Not running."
             
-            # stops_str1 = shorten_Ltd_to_L(str(detail[0]))
-            # stops_str2 = shorten_Exp_to_E(str(stops_str1))
-            # if str(detail[0]).find('Ltd') is not None:
-            #    str1 = str(detail[0])
-            #    str2 = str1.replace(' ','')
-            #    str3 = str2.replace('Ltd','L')
             str1 = shorten_the_route_codes(str(detail[0]))
-
 
 
             response = "%s: %s (%s) to %s (%s). %s. %s %s" % (str1, str(detail[1]), str(detail[2]), str(detail[3]), str(detail[4]),str(headway), str(url), str(distance))
@@ -189,6 +195,9 @@ class App(AppBase):
 
             from_matches = get_stops_for_string(from_txt)
             to_matches = get_stops_for_string(to_txt)
+            #f = open("temperr.log","w")
+            #f.write(str(to_matches))
+            #f.close()
 
 #            stop1matches = ChaloBest.stops(q=stop1txt)['features']
             if not from_matches:
@@ -209,7 +218,7 @@ class App(AppBase):
                 return
             routesFound = ", ".join(intersection)
             routesFound = shorten_the_route_codes(routesFound)
-            response = "%s to %s: %s" % (from_matches['name'], to_matches['name'], routesFound,)
+            response = "%s->%s: %s" % (from_matches['name'], to_matches['name'], routesFound,)
             if len(response) > MAX_MSG_LEN:
                 response = response[0:MAX_MSG_LEN]
             #msg.respond("%s to %s: %s" % (from_matches['name'], to_matches['name'], routesFound,))
@@ -230,10 +239,11 @@ class App(AppBase):
                     stops.append(stop)
             response = STYLE["start"]
             for stop in stops:
-                match = stop["display_name"] + ": " + stop["routes"]
+                sroutes =  shorten_the_route_codes(stop["routes"])
+                stoparea = stop["area"] if stop["area"] else ""  #takes care of 'None' areas
+                match = stop["display_name"] + "(" + stoparea  + ")" + ": " + sroutes 
                 if len(response) > len(STYLE["repeat"]): response += STYLE["repeat"]
                 response += match
-                response = shorten_the_route_codes(response)
                 if len(response) > MAX_MSG_LEN or stop['display_name'].lower() == msg.text.strip().lower(): break
             if len(response) > MAX_MSG_LEN:
                 response = response[:MAX_MSG_LEN-(len(STYLE["end"])+4)] + "..."
