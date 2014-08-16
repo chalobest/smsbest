@@ -96,16 +96,21 @@ def shorten_the_route_codes(inputstr):
    if inputstr.find('Extra') is not None:
       inputstr = inputstr.replace('Extra','XT')
 
-
    #remove dups
    routes = list(set(inputstr.split(',')))
    
    o1, o2 = [],[]    
    for r in routes:
+      # some formatting for AS and C buses
+      if r.startswith("A") or r.startswith("C"):
+         r.strip("X")
+      # assign to numeric and non-numeric bins
       o1.append(r) if r[:1].isdigit() else o2.append(r)
+   #sort   
    o1sortedtup = sorted([(int(i.strip('LRASXT-')), i ) for i in o1 ]);   #sorts by number   
    o1sorted = [ r[1] for r in o1sortedtup] 
    o2sorted = sorted(o2); 
+   #combine
    assorted = o1sorted + o2sorted
    assorted = ",".join(assorted)
    return assorted
