@@ -5,7 +5,7 @@ from os.path import join
 
 
 admin.autodiscover()
-##
+
 urlpatterns = patterns('',
     # Example:
     # (r'^my-project/', include('my_project.foo.urls')),
