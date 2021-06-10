@@ -1,4 +1,4 @@
-Django==1.11.28
+Django==2.2.24
 #git+http://github.com/django/django.git@stable/1.5.x#egg=django
 #PIL==#.1.7
 # RapidSMS==0.9.6a
